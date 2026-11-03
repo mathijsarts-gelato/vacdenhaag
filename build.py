@@ -163,17 +163,6 @@ def url_of(lang, key):
     return base + ("" if p == "index.html" else p)
 
 # ---------------------------------------------------------------- components
-SPONSORS = [("maison-kuhne", "Maison Kühne"), ("lean-lawyers", "Lean Lawyers"), ("haguegym", "Haguegym"),
-            ("haagse-stroom", "Haagse Stroom"), ("rim-wonen", "RIM Wonen"), ("fokker", "Fokker"), ("shell", "Shell")]
-
-def sponsor_strip(L):
-    nl = L["lang"] == "nl"
-    pre = prefix(L["lang"])
-    def items(hidden):
-        return "".join(f'<li{" aria-hidden=\"true\"" if hidden else ""}><img src="{pre}assets/sponsors/{f}.webp" alt="{"" if hidden else esc(n)}" loading="lazy" height="60"></li>' for f, n in SPONSORS)
-    return (f'<section class="sponsors" aria-label="{"Sponsors" if nl else "Sponsors"}"><p class="kicker">{"Met dank aan onze sponsors" if nl else "With thanks to our sponsors"}</p>'
-            f'<div class="marquee"><ul class="marquee-track">{items(False)}{items(True)}</ul></div></section>')
-
 CREST = ('<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 1 38 8v15c0 11-8 18-18 22C10 41 2 34 2 23V8Z" fill="#1d3557" stroke="#c9a24e" stroke-width="1.5"/>'
          '<text x="20" y="27" text-anchor="middle" font-family="VAC Display,Arial Narrow,sans-serif" font-weight="700" font-size="12.5" fill="#f5f0e6">VAC</text></svg>')
 
@@ -198,16 +187,14 @@ def head(L, key, title, desc, extra_ld=None):
 <meta property="og:url" content="{url_of(lang, key)}">
 <meta property="og:locale" content="{'nl_NL' if lang=='nl' else 'en_GB'}">
 <meta name="theme-color" content="#13243d">
-<link rel="icon" href="{pre}assets/img/favicon-64.png" type="image/png">
-<link rel="apple-touch-icon" href="{pre}assets/img/apple-touch-icon.png">
-<meta property="og:image" content="{DOMAIN}/assets/img/og-image.png">
+<link rel="icon" href="{pre}assets/icon.svg" type="image/svg+xml">
 <link rel="preload" href="{pre}assets/fonts/heroscn-bold.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="{pre}assets/site.css">
 {ld}
 </head>
 <body>
 <header class="site-head"><div class="wrap">
-<a class="brand" href="{L['pages']['home']}"><img src="{pre}assets/img/logo-112.webp" width="78" height="112" alt=""><b>VAC</b><span>{esc(L['brand_sub'])}</span></a>
+<a class="brand" href="{L['pages']['home']}">{CREST}<b>VAC</b><span>{esc(L['brand_sub'])}</span></a>
 <nav class="nav" aria-label="{'Hoofdmenu' if lang=='nl' else 'Main menu'}">
 {''.join(f'<a href="{L["pages"][k]}"{" aria-current=\"page\"" if k==key else ""}>{esc(L["nav"][k])}</a>' for k in ("home","comp","rules","club","join"))}
 </nav>
@@ -272,7 +259,7 @@ def org_ld(L):
     return {
         "@context": "https://schema.org", "@type": "SportsOrganization",
         "name": "VAC – Vrijdag Avond Competitie", "alternateName": ["VAC Den Haag", "Friday Evening League The Hague"],
-        "url": DOMAIN + "/", "sport": "Soccer", "logo": DOMAIN + "/assets/img/logo-640.png",
+        "url": DOMAIN + "/", "sport": "Soccer",
         "description": ("7-tegen-7-voetbalcompetitie voor 35-plussers op vrijdagavond bij HVV in Den Haag." if nl
                         else "7-a-side football league for players aged 35+ on Friday evenings at HVV in The Hague."),
         "location": place_ld(L),
@@ -311,14 +298,11 @@ def page_home(L, matches, teams, order):
     ld = [org_ld(L)] + (events_ld(nxt[1], L) if nxt else [])
     P = L["pages"]
     h = head(L, "home", title, desc, ld)
-    h += f"""<section class="hero hero-logo">
-<img class="hero-crest" src="{prefix(L['lang'])}assets/img/logo-640.webp" width="447" height="640" alt="{'Logo van de 7-7 competitie bij Koninklijke HVV Den Haag' if nl else 'Logo of the 7-a-side league at Koninklijke HVV The Hague'}">
-<div class="hero-text">
+    h += f"""<section class="hero">
 <p class="kicker">{'Seizoen' if nl else 'Season'} {SEASON}</p>
 <h1>{'Vrijdag Avond Competitie' if nl else 'Friday Evening League'}<br><em>{'bij HVV' if nl else 'at HVV'}</em></h1>
 <div class="meta"><span>{'7 tegen 7' if nl else '7-a-side'}</span><span>35+</span><span>{'Vrijdag 20:30u en 21:15u' if nl else 'Fridays 8.30 and 9.15 pm'}</span><span>{'Den Haag' if nl else 'The Hague'}</span></div>
 <div><a class="btn" href="{P['join']}">{'Doe jij volgend seizoen ook mee?' if nl else 'Join us next season?'} <span aria-hidden="true">→</span></a></div>
-</div>
 </section>
 <section class="grid2">"""
     if nxt:
@@ -331,7 +315,6 @@ def page_home(L, matches, teams, order):
 <section class="cta"><h2>{'Doe jij volgend seizoen ook mee?' if nl else 'Join us next season?'}</h2>
 <p>{'Een team van collega’s, vaders van het schoolplein, oud-teamgenoten of vrienden uit de buurt? We horen graag van teams die op vrijdagavond willen voetballen.' if nl else 'A team of colleagues, school-gate dads, former teammates or friends from the neighbourhood? We would love to hear from teams who want to play on Friday evenings.'}</p>
 <a class="btn" href="{P['join']}">{'Zo doe je mee' if nl else 'How to join'} <span aria-hidden="true">→</span></a></section>
-{sponsor_strip(L)}
 """
     return h + foot(L)
 
@@ -544,6 +527,8 @@ def main():
     if os.path.exists(DIST):
         shutil.rmtree(DIST)
     shutil.copytree(os.path.join(ROOT, "site"), DIST)
+    for old in ("assets/img", "assets/sponsors"):  # niet meer gebruikt: nooit publiceren
+        shutil.rmtree(os.path.join(DIST, old), ignore_errors=True)
     os.makedirs(os.path.join(DIST, "en"), exist_ok=True)
     os.makedirs(os.path.join(DIST, "agenda"), exist_ok=True)
     for lang in ("nl", "en"):
