@@ -12,6 +12,8 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 DIST = os.path.join(ROOT, "dist")
 DOMAIN = "https://vacdenhaag.nl"
 EMAIL = "info@vacdenhaag.nl"
+WHATSAPP = "06-14338775"
+WHATSAPP_INTL = "31614338775"
 TZ = ZoneInfo("Europe/Amsterdam")
 NOW = dt.datetime.now(TZ)
 TODAY = NOW.date()
@@ -161,6 +163,17 @@ def url_of(lang, key):
     return base + ("" if p == "index.html" else p)
 
 # ---------------------------------------------------------------- components
+SPONSORS = [("maison-kuhne", "Maison Kühne"), ("lean-lawyers", "Lean Lawyers"), ("haguegym", "Haguegym"),
+            ("haagse-stroom", "Haagse Stroom"), ("rim-wonen", "RIM Wonen"), ("fokker", "Fokker"), ("shell", "Shell")]
+
+def sponsor_strip(L):
+    nl = L["lang"] == "nl"
+    pre = prefix(L["lang"])
+    def items(hidden):
+        return "".join(f'<li{" aria-hidden=\"true\"" if hidden else ""}><img src="{pre}assets/sponsors/{f}.webp" alt="{"" if hidden else esc(n)}" loading="lazy" height="60"></li>' for f, n in SPONSORS)
+    return (f'<section class="sponsors" aria-label="{"Sponsors" if nl else "Sponsors"}"><p class="kicker">{"Met dank aan onze sponsors" if nl else "With thanks to our sponsors"}</p>'
+            f'<div class="marquee"><ul class="marquee-track">{items(False)}{items(True)}</ul></div></section>')
+
 CREST = ('<svg viewBox="0 0 40 46" aria-hidden="true"><path d="M20 1 38 8v15c0 11-8 18-18 22C10 41 2 34 2 23V8Z" fill="#1d3557" stroke="#c9a24e" stroke-width="1.5"/>'
          '<text x="20" y="27" text-anchor="middle" font-family="VAC Display,Arial Narrow,sans-serif" font-weight="700" font-size="12.5" fill="#f5f0e6">VAC</text></svg>')
 
@@ -185,14 +198,16 @@ def head(L, key, title, desc, extra_ld=None):
 <meta property="og:url" content="{url_of(lang, key)}">
 <meta property="og:locale" content="{'nl_NL' if lang=='nl' else 'en_GB'}">
 <meta name="theme-color" content="#13243d">
-<link rel="icon" href="{pre}assets/icon.svg" type="image/svg+xml">
+<link rel="icon" href="{pre}assets/img/favicon-64.png" type="image/png">
+<link rel="apple-touch-icon" href="{pre}assets/img/apple-touch-icon.png">
+<meta property="og:image" content="{DOMAIN}/assets/img/og-image.png">
 <link rel="preload" href="{pre}assets/fonts/heroscn-bold.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="{pre}assets/site.css">
 {ld}
 </head>
 <body>
 <header class="site-head"><div class="wrap">
-<a class="brand" href="{L['pages']['home']}">{CREST}<b>VAC</b><span>{esc(L['brand_sub'])}</span></a>
+<a class="brand" href="{L['pages']['home']}"><img src="{pre}assets/img/logo-112.webp" width="78" height="112" alt=""><b>VAC</b><span>{esc(L['brand_sub'])}</span></a>
 <nav class="nav" aria-label="{'Hoofdmenu' if lang=='nl' else 'Main menu'}">
 {''.join(f'<a href="{L["pages"][k]}"{" aria-current=\"page\"" if k==key else ""}>{esc(L["nav"][k])}</a>' for k in ("home","comp","rules","club","join"))}
 </nav>
@@ -206,7 +221,7 @@ def foot(L):
     return f"""</div></main>
 <footer class="site-foot"><div class="wrap">
 <div><b>VAC</b> · {esc(L['brand_sub'])}<br>{'7 tegen 7, op vrijdagavond bij HVV.' if nl else '7-a-side football, Friday evenings at HVV.'}</div>
-<div>{VENUE}<br>{ADDRESS['street']}<br>{ADDRESS['zip']} {L['city']}<br><span class="mail-small">{EMAIL}</span></div>
+<div>{VENUE}<br>{ADDRESS['street']}<br>{ADDRESS['zip']} {L['city']}</div>
 <div>{L['updated']} {fdate(NOW.date(), L, False)} {NOW.year}, {NOW:%H.%M}<br>{'Deze website plaatst geen cookies en gebruikt geen trackers.' if nl else 'This website sets no cookies and uses no trackers.'}</div>
 </div></footer>
 <script src="{prefix(L['lang'])}assets/site.js" defer></script>
@@ -257,7 +272,7 @@ def org_ld(L):
     return {
         "@context": "https://schema.org", "@type": "SportsOrganization",
         "name": "VAC – Vrijdag Avond Competitie", "alternateName": ["VAC Den Haag", "Friday Evening League The Hague"],
-        "url": DOMAIN + "/", "email": EMAIL, "sport": "Soccer",
+        "url": DOMAIN + "/", "sport": "Soccer", "logo": DOMAIN + "/assets/img/logo-640.png",
         "description": ("7-tegen-7-voetbalcompetitie voor 35-plussers op vrijdagavond bij HVV in Den Haag." if nl
                         else "7-a-side football league for players aged 35+ on Friday evenings at HVV in The Hague."),
         "location": place_ld(L),
@@ -296,11 +311,14 @@ def page_home(L, matches, teams, order):
     ld = [org_ld(L)] + (events_ld(nxt[1], L) if nxt else [])
     P = L["pages"]
     h = head(L, "home", title, desc, ld)
-    h += f"""<section class="hero">
+    h += f"""<section class="hero hero-logo">
+<img class="hero-crest" src="{prefix(L['lang'])}assets/img/logo-640.webp" width="447" height="640" alt="{'Logo van de 7-7 competitie bij Koninklijke HVV Den Haag' if nl else 'Logo of the 7-a-side league at Koninklijke HVV The Hague'}">
+<div class="hero-text">
 <p class="kicker">{'Seizoen' if nl else 'Season'} {SEASON}</p>
 <h1>{'Vrijdag Avond Competitie' if nl else 'Friday Evening League'}<br><em>{'bij HVV' if nl else 'at HVV'}</em></h1>
 <div class="meta"><span>{'7 tegen 7' if nl else '7-a-side'}</span><span>35+</span><span>{'Vrijdag 20:30u en 21:15u' if nl else 'Fridays 8.30 and 9.15 pm'}</span><span>{'Den Haag' if nl else 'The Hague'}</span></div>
 <div><a class="btn" href="{P['join']}">{'Doe jij volgend seizoen ook mee?' if nl else 'Join us next season?'} <span aria-hidden="true">→</span></a></div>
+</div>
 </section>
 <section class="grid2">"""
     if nxt:
@@ -313,6 +331,7 @@ def page_home(L, matches, teams, order):
 <section class="cta"><h2>{'Doe jij volgend seizoen ook mee?' if nl else 'Join us next season?'}</h2>
 <p>{'Een team van collega’s, vaders van het schoolplein, oud-teamgenoten of vrienden uit de buurt? We horen graag van teams die op vrijdagavond willen voetballen.' if nl else 'A team of colleagues, school-gate dads, former teammates or friends from the neighbourhood? We would love to hear from teams who want to play on Friday evenings.'}</p>
 <a class="btn" href="{P['join']}">{'Zo doe je mee' if nl else 'How to join'} <span aria-hidden="true">→</span></a></section>
+{sponsor_strip(L)}
 """
     return h + foot(L)
 
@@ -441,13 +460,13 @@ FAQ = {
         ("Waar wordt er gespeeld?", "Bij HVV op Sportpark De Diepput, Van Hogenhoucklaan 37 in Den Haag."),
         ("Hoeveel speel je per avond?", "Twee wedstrijden van 30 minuten, 7 tegen 7 op een half veld."),
         ("Is er een scheidsrechter?", "Nee. Teams regelen zelf de spelbegeleiding. Er wordt alleen centraal gefloten voor het begin en het einde van de wedstrijden."),
-        ("Wat kost het en hoe meld ik mijn team aan?", "Stuur een mail naar info@vacdenhaag.nl met de naam van je team en een contactpersoon. We sturen je dan alle informatie, ook over de kosten.")],
+        ("Wat kost het en hoe meld ik mijn team aan?", "Stuur een WhatsApp naar 06-14338775 met de naam van je team en een contactpersoon. We sturen je dan alle informatie, ook over de kosten.")],
  "en": [("Who is the VAC for?", "Teams of players aged 35 and over who want to play football on Friday evenings. The current teams started at work, at the school gate, as a spin-off of a senior team, or simply among friends or neighbours."),
         ("When do we play?", "On Friday evenings. Part 1 runs from September to December, part 2 from February to May. Matches kick off at 8.30 pm and 9.15 pm."),
         ("Where do we play?", "At HVV, Sportpark De Diepput, Van Hogenhoucklaan 37 in The Hague."),
         ("How much do you play per evening?", "Two matches of 30 minutes, 7-a-side on half a pitch."),
         ("Is there a referee?", "No. Teams referee their own matches. A central whistle only marks the start and end of the matches."),
-        ("What does it cost and how do I sign up my team?", "Send an email to info@vacdenhaag.nl with your team name and a contact person. We will send you all the information, including the costs.")],
+        ("What does it cost and how do I sign up my team?", "Send a WhatsApp message to +31 6 14338775 with your team name and a contact person. We will send you all the information, including the costs.")],
 }
 
 def page_join(L):
@@ -469,10 +488,10 @@ def page_join(L):
 <p>{'We spelen 7 tegen 7 op een half veld, zonder buitenspel en zonder slidings. De teams fluiten zelf, en de aanvoerders zorgen samen voor een sportieve wedstrijd.' if nl else 'We play 7-a-side on half a pitch, without offside and without sliding tackles. The teams referee themselves, and the captains make sure the match stays sporting.'}</p>
 <p><a href="{L['pages']['rules']}">{'Lees de spelregels' if nl else 'Read the rules'}</a></p></div>
 <div class="panel"><div class="sec-head"><h2>{'Aanmelden' if nl else 'Sign up'}</h2></div>
-<p>{'Mail de naam van je team en een contactpersoon naar:' if nl else 'Email your team name and a contact person to:'}</p>
-<p class="mail">{EMAIL}</p>
-<div class="downloads"><a class="btn" href="mailto:{EMAIL}?subject={'Aanmelding%20VAC' if nl else 'VAC%20sign-up'}">{'Mail ons' if nl else 'Email us'}</a>
-<button class="btn ghost" type="button" data-copy="{EMAIL}">{'Kopieer adres' if nl else 'Copy address'}</button></div></div>
+<p>{'Stuur een WhatsApp met de naam van je team en een contactpersoon naar:' if nl else 'Send a WhatsApp message with your team name and a contact person to:'}</p>
+<p class="mail">{WHATSAPP}</p>
+<div class="downloads"><a class="btn" href="https://wa.me/{WHATSAPP_INTL}?text={'Hoi%2C%20wij%20willen%20graag%20meedoen%20met%20de%20VAC.%20Teamnaam%3A%20' if nl else 'Hi%2C%20we%20would%20like%20to%20join%20the%20VAC.%20Team%20name%3A%20'}" rel="noopener">{'Stuur een WhatsApp' if nl else 'Send a WhatsApp'}</a>
+<button class="btn ghost" type="button" data-copy="{WHATSAPP}">{'Kopieer nummer' if nl else 'Copy number'}</button></div></div>
 </section>
 <section class="faq"><div class="sec-head"><h2>{'Veelgestelde vragen' if nl else 'Frequently asked questions'}</h2></div>{faq}</section>"""
     return h + foot(L)
@@ -549,7 +568,7 @@ def main():
     open(os.path.join(DIST, "robots.txt"), "w").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     open(os.path.join(DIST, "CNAME"), "w").write("vacdenhaag.nl\n")
     llms = (f"# VAC – Vrijdag Avond Competitie (Den Haag)\n\n> 7-tegen-7-voetbalcompetitie voor 35-plussers op vrijdagavond bij HVV "
-            f"(Koninklijke HC&VV), {VENUE}, {ADDRESS['street']}, {ADDRESS['zip']} Den Haag. Contact: {EMAIL}.\n\n"
+            f"(Koninklijke HC&VV), {VENUE}, {ADDRESS['street']}, {ADDRESS['zip']} Den Haag. Aanmelden via WhatsApp: {WHATSAPP}.\n\n"
             f"- [Programma, uitslagen en stand]({DOMAIN}/competitie.html)\n- [Spelregels]({DOMAIN}/spelregels.html)\n"
             f"- [Koninklijke HVV en route]({DOMAIN}/koninklijke-hvv.html)\n- [Meedoen met je team]({DOMAIN}/meedoen.html)\n"
             f"- [English version]({DOMAIN}/en/)\n")
